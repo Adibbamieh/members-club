@@ -1,0 +1,85 @@
+/**
+ * SWS Members Club — Admin styles.
+ */
+
+/* Status badges */
+.sws-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.sws-status--active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.sws-status--lapsed {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.sws-status--suspended {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.sws-status--waitlist_only {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+/* Filter bar */
+.sws-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+    flex-wrap: wrap;
+}
+
+.sws-filters .search-box {
+    margin: 0;
+}
+
+/* Strike count */
+.sws-strike-count {
+    font-size: 24px;
+    text-align: center;
+    margin: 12px 0;
+}
+
+/* Penalty history */
+.sws-penalty-history {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sws-penalty-history li {
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.sws-penalty-history li:last-child {
+    border-bottom: none;
+}
+
+/* Title count badge */
+.title-count {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 4px;
+    padding: 0 8px;
+    min-width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    background: #646970;
+    color: #fff;
+    font-size: 13px;
+    line-height: 24px;
+    text-align: center;
+}
