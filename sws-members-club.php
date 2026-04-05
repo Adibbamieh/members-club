@@ -30,8 +30,15 @@ spl_autoload_register( function ( $class ) {
     }
 
     $class_file = 'class-' . strtolower( str_replace( '_', '-', $class ) ) . '.php';
-    $file       = SWS_PLUGIN_DIR . 'includes/' . $class_file;
 
+    // Check includes/ first, then public/.
+    $file = SWS_PLUGIN_DIR . 'includes/' . $class_file;
+    if ( file_exists( $file ) ) {
+        require_once $file;
+        return;
+    }
+
+    $file = SWS_PLUGIN_DIR . 'public/' . $class_file;
     if ( file_exists( $file ) ) {
         require_once $file;
     }
@@ -114,6 +121,12 @@ function sws_init() {
     if ( is_admin() ) {
         new SWS_Admin();
     }
+
+    // Load REST API (always, even on admin).
+    new SWS_Rest_Api();
+
+    // Load shortcodes (frontend).
+    new SWS_Shortcodes();
 }
 add_action( 'plugins_loaded', 'sws_init' );
 
@@ -124,3 +137,62 @@ add_action( 'sws_daily_stripe_sync', function () {
     $members = new SWS_Members();
     $members->sync_all_stripe_subscriptions();
 } );
+
+/**
+ * Hook: check and send event reminders (every 15 minutes).
+ */
+add_action( 'sws_check_reminders', function () {
+    $reminders = new SWS_Reminders();
+    $reminders->check_and_send();
+} );
+
+/**
+ * Hook: check for expired waitlist offers (every 15 minutes).
+ */
+add_action( 'sws_check_waitlist_expiry', function () {
+    SWS_Waitlist::check_expired_offers();
+} );
+
+// -------------------------------------------------------------------------
+// Email & Waitlist hooks — fire on booking lifecycle events
+// -------------------------------------------------------------------------
+
+/**
+ * After booking(s) created: send confirmation email for each ticket.
+ */
+add_action( 'sws_booking_created', function ( $booking_ids, $event_id, $user_id, $event ) {
+    foreach ( $booking_ids as $booking_id ) {
+        SWS_Emails::send_booking_confirmation( $booking_id );
+    }
+}, 10, 4 );
+
+/**
+ * After booking cancelled: send cancellation email and promote waitlist.
+ */
+add_action( 'sws_booking_cancelled', function ( $booking_id, $booking ) {
+    SWS_Emails::send_cancellation_confirmation( $booking_id, $booking );
+
+    // Promote next person on waitlist if the cancelled booking was confirmed.
+    if ( $booking->status === 'confirmed' ) {
+        SWS_Waitlist::promote_next( $booking->event_id );
+    }
+}, 10, 2 );
+
+/**
+ * After event cancelled: notify all affected attendees.
+ */
+add_action( 'sws_event_cancelled', function ( $event_id, $event, $bookings ) {
+    SWS_Emails::send_event_cancelled_notifications( $event, $bookings );
+}, 10, 3 );
+
+/**
+ * After penalty strike added: send penalty notice email.
+ */
+add_action( 'sws_member_strike_added', function ( $user_id, $strike_count, $max_strikes ) {
+    // Get the most recent penalty to find the reason.
+    $penalties = new SWS_Penalties();
+    $history   = $penalties->get_member_penalties( $user_id );
+    $reason    = ! empty( $history ) ? $history[0]->reason : 'unknown';
+
+    SWS_Emails::send_penalty_notice( $user_id, $strike_count, $max_strikes, $reason );
+}, 10, 3 );

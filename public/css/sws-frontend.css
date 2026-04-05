@@ -1,0 +1,433 @@
+/**
+ * SWS Members Club — Frontend structural CSS.
+ *
+ * Minimal layout only. No brand colours or fonts.
+ * Theme developer styles these classes in the theme stylesheet.
+ */
+
+/* Events grid */
+.sws-events__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+/* Event card */
+.sws-event-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.sws-event-card__header {
+    padding: 16px 20px 8px;
+}
+
+.sws-event-card__title {
+    margin: 0 0 4px;
+    font-size: 1.15em;
+}
+
+.sws-event-card__date {
+    font-size: 0.9em;
+    opacity: 0.7;
+}
+
+.sws-event-card__details {
+    padding: 0 20px 12px;
+    font-size: 0.9em;
+}
+
+.sws-event-card__time,
+.sws-event-card__venue {
+    margin-top: 4px;
+}
+
+.sws-event-card__footer {
+    margin-top: auto;
+    padding: 12px 20px 16px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.sws-event-card__price {
+    flex: 1;
+}
+
+.sws-event-card__price-included {
+    font-size: 0.85em;
+    font-style: italic;
+}
+
+.sws-event-card__availability {
+    font-size: 0.85em;
+}
+
+.sws-event-card__availability-full {
+    color: #c0392b;
+}
+
+.sws-event-card__button {
+    display: inline-block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95em;
+}
+
+/* Booking form */
+.sws-booking {
+    max-width: 640px;
+}
+
+.sws-booking__meta {
+    margin: 16px 0;
+}
+
+.sws-booking__meta-item {
+    margin-bottom: 8px;
+}
+
+.sws-booking__description {
+    margin: 16px 0;
+    padding: 16px 0;
+    border-top: 1px solid #eee;
+}
+
+.sws-booking__form {
+    margin-top: 24px;
+}
+
+.sws-booking__field {
+    margin-bottom: 16px;
+}
+
+.sws-booking__field label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.sws-booking__input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+.sws-booking__guest-toggle,
+.sws-booking__policy {
+    margin: 16px 0;
+}
+
+.sws-booking__checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.sws-booking__payment {
+    margin: 20px 0;
+}
+
+.sws-booking__payment label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.sws-booking__card-element {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.sws-booking__card-errors {
+    color: #c0392b;
+    font-size: 0.9em;
+    margin-top: 8px;
+}
+
+.sws-booking__button {
+    display: inline-block;
+    padding: 12px 32px;
+    border: none;
+    border-radius: 4px;
+    font-size: 1em;
+    cursor: pointer;
+    background: #333;
+    color: #fff;
+}
+
+.sws-booking__button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.sws-booking__messages {
+    margin-top: 16px;
+}
+
+.sws-booking__notice {
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+.sws-booking__notice--info {
+    background: #e8f4fd;
+    border: 1px solid #bee5eb;
+}
+
+.sws-booking__notice--warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+}
+
+.sws-booking__waitlist-button {
+    padding: 10px 24px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+.sws-notice {
+    padding: 12px 16px;
+    background: #f0f0f0;
+    border-radius: 4px;
+}
+
+/* My Tickets */
+.sws-my-tickets__tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 24px;
+}
+
+.sws-my-tickets__tab {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 1em;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    opacity: 0.6;
+}
+
+.sws-my-tickets__tab--active {
+    opacity: 1;
+    border-bottom-color: currentColor;
+    font-weight: 600;
+}
+
+.sws-my-tickets__tab-count {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: #eee;
+    font-size: 0.85em;
+    font-weight: normal;
+}
+
+.sws-my-tickets__list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Ticket card */
+.sws-ticket-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.sws-ticket-card--past {
+    opacity: 0.7;
+}
+
+.sws-ticket-card__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.sws-ticket-card__title {
+    margin: 0;
+    font-size: 1.1em;
+}
+
+.sws-ticket-card__badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.8em;
+}
+
+.sws-ticket-card__badge--guest {
+    background: #e8f4fd;
+}
+
+.sws-ticket-card__details {
+    font-size: 0.9em;
+    margin-bottom: 12px;
+}
+
+.sws-ticket-card__details > div {
+    margin-bottom: 4px;
+}
+
+.sws-ticket-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+}
+
+/* Calendar dropdown */
+.sws-ticket-card__calendar-dropdown {
+    position: relative;
+}
+
+.sws-ticket-card__calendar-button {
+    padding: 6px 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.sws-ticket-card__calendar-menu {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    min-width: 220px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    margin-bottom: 4px;
+}
+
+.sws-ticket-card__calendar-menu a {
+    display: block;
+    padding: 10px 14px;
+    text-decoration: none;
+    font-size: 0.9em;
+}
+
+.sws-ticket-card__calendar-menu a:hover {
+    background: #f5f5f5;
+}
+
+.sws-ticket-card__calendar-dropdown.sws-open .sws-ticket-card__calendar-menu {
+    display: block;
+}
+
+/* Cancel button */
+.sws-ticket-card__cancel-button {
+    padding: 6px 14px;
+    border: 1px solid #c0392b;
+    border-radius: 4px;
+    background: transparent;
+    color: #c0392b;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.sws-ticket-card__cutoff-notice {
+    font-size: 0.85em;
+    font-style: italic;
+    opacity: 0.6;
+}
+
+/* Cancel confirmation modal */
+.sws-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sws-modal {
+    background: #fff;
+    border-radius: 8px;
+    padding: 24px 32px;
+    max-width: 420px;
+    width: 90%;
+}
+
+.sws-modal__title {
+    margin: 0 0 12px;
+    font-size: 1.15em;
+}
+
+.sws-modal__text {
+    margin-bottom: 20px;
+    font-size: 0.95em;
+}
+
+.sws-modal__actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.sws-modal__cancel {
+    padding: 8px 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.sws-modal__confirm {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background: #c0392b;
+    color: #fff;
+    cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .sws-events__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sws-ticket-card__actions {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sws-modal {
+        padding: 20px;
+    }
+}
