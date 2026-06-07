@@ -81,6 +81,7 @@ class SWS_Database {
             membership_start_date date DEFAULT NULL,
             membership_end_date date DEFAULT NULL,
             penalty_strikes int(11) NOT NULL DEFAULT 0,
+            calendar_token varchar(64) DEFAULT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
@@ -88,7 +89,8 @@ class SWS_Database {
             KEY membership_tier_id (membership_tier_id),
             KEY membership_status (membership_status),
             KEY stripe_customer_id (stripe_customer_id),
-            KEY stripe_subscription_id (stripe_subscription_id)
+            KEY stripe_subscription_id (stripe_subscription_id),
+            KEY calendar_token (calendar_token)
         ) {$charset_collate};";
     }
 
@@ -114,6 +116,8 @@ class SWS_Database {
             cancellation_cutoff_hours int(11) NOT NULL DEFAULT 48,
             waitlist_enabled tinyint(1) NOT NULL DEFAULT 1,
             status varchar(20) NOT NULL DEFAULT 'draft',
+            cover_image_id bigint(20) unsigned DEFAULT NULL,
+            feature_image_id bigint(20) unsigned DEFAULT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),

@@ -22,6 +22,10 @@ $currency                 = $event->currency ?? 'GBP';
 $cancellation_cutoff      = $event->cancellation_cutoff_hours ?? get_option( 'sws_default_cancellation_cutoff', 48 );
 $waitlist_enabled         = isset( $event->waitlist_enabled ) ? (int) $event->waitlist_enabled : 1;
 $status                   = $event->status ?? 'draft';
+$cover_image_id           = isset( $event->cover_image_id ) ? (int) $event->cover_image_id : 0;
+$feature_image_id         = isset( $event->feature_image_id ) ? (int) $event->feature_image_id : 0;
+$cover_image_url          = $cover_image_id ? wp_get_attachment_image_url( $cover_image_id, 'medium' ) : '';
+$feature_image_url        = $feature_image_id ? wp_get_attachment_image_url( $feature_image_id, 'medium' ) : '';
 ?>
 <div class="wrap">
     <h1>
@@ -60,6 +64,38 @@ $status                   = $event->status ?? 'draft';
                                             'teeny'         => true,
                                         ) );
                                         ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th><?php esc_html_e( 'Cover Image', 'sws-members-club' ); ?></th>
+                                    <td>
+                                        <div class="sws-image-field" data-target="cover_image_id">
+                                            <input type="hidden" name="cover_image_id" id="cover_image_id" value="<?php echo esc_attr( $cover_image_id ); ?>">
+                                            <div class="sws-image-field__preview" id="cover_image_id_preview">
+                                                <?php if ( $cover_image_url ) : ?>
+                                                    <img src="<?php echo esc_url( $cover_image_url ); ?>" alt="">
+                                                <?php endif; ?>
+                                            </div>
+                                            <button type="button" class="button sws-image-field__select"><?php esc_html_e( 'Select Image', 'sws-members-club' ); ?></button>
+                                            <button type="button" class="button-link sws-image-field__remove" <?php echo $cover_image_id ? '' : 'style="display:none;"'; ?>><?php esc_html_e( 'Remove', 'sws-members-club' ); ?></button>
+                                            <p class="description"><?php esc_html_e( 'Shown on the events listing / Members Portal cards.', 'sws-members-club' ); ?></p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th><?php esc_html_e( 'Feature Image', 'sws-members-club' ); ?></th>
+                                    <td>
+                                        <div class="sws-image-field" data-target="feature_image_id">
+                                            <input type="hidden" name="feature_image_id" id="feature_image_id" value="<?php echo esc_attr( $feature_image_id ); ?>">
+                                            <div class="sws-image-field__preview" id="feature_image_id_preview">
+                                                <?php if ( $feature_image_url ) : ?>
+                                                    <img src="<?php echo esc_url( $feature_image_url ); ?>" alt="">
+                                                <?php endif; ?>
+                                            </div>
+                                            <button type="button" class="button sws-image-field__select"><?php esc_html_e( 'Select Image', 'sws-members-club' ); ?></button>
+                                            <button type="button" class="button-link sws-image-field__remove" <?php echo $feature_image_id ? '' : 'style="display:none;"'; ?>><?php esc_html_e( 'Remove', 'sws-members-club' ); ?></button>
+                                            <p class="description"><?php esc_html_e( 'Large image shown on the event booking page.', 'sws-members-club' ); ?></p>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr>

@@ -196,6 +196,34 @@
     border: 1px solid #ffc107;
 }
 
+.sws-booking__notice--success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 20px 24px;
+    font-size: 1.05em;
+    text-align: center;
+}
+
+.sws-booking__notice--success::before {
+    content: '✓';
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    border-radius: 50%;
+    background: #155724;
+    color: #fff;
+    margin-right: 10px;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+.sws-booking__notice--success p {
+    display: inline;
+    margin: 0;
+}
+
 .sws-booking__waitlist-button {
     padding: 10px 24px;
     border: 1px solid #333;
@@ -429,5 +457,86 @@
 
     .sws-modal {
         padding: 20px;
+    }
+}
+
+/* Event images (structural only — theme controls aspect ratio / framing) */
+.sws-event-card__media {
+    margin: 0 0 12px;
+}
+
+.sws-event-card__image {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.sws-booking__media {
+    margin: 0 0 20px;
+}
+
+.sws-booking__image {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Calendar subscription bar (structural only) */
+.sws-calendar-subscribe {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+
+.sws-calendar-subscribe__title {
+    display: block;
+}
+
+.sws-calendar-subscribe__desc {
+    display: block;
+    font-size: 0.9em;
+    opacity: 0.75;
+    margin-top: 2px;
+}
+
+.sws-calendar-subscribe__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sws-calendar-subscribe__button {
+    display: inline-block;
+    padding: 10px 18px;
+    text-decoration: none;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
+.sws-calendar-subscribe__copy {
+    padding: 10px 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.95em;
+}
+
+@media (max-width: 600px) {
+    .sws-calendar-subscribe__actions {
+        width: 100%;
+    }
+
+    .sws-calendar-subscribe__button,
+    .sws-calendar-subscribe__copy {
+        flex: 1;
+        text-align: center;
     }
 }

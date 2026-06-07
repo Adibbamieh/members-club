@@ -125,7 +125,7 @@ class SWS_Bookings {
      * @param int    $quantity 1 or 2 (with +1 guest).
      * @return true|WP_Error True if valid, WP_Error with reason if not.
      */
-    public function validate_booking( $event_id, $user_id, $quantity = 1 ) {
+    public function validate_booking( $event_id, $user_id, $quantity = 1, $admin = false ) {
         $events  = new SWS_Events();
         $members = new SWS_Members();
 
@@ -144,12 +144,14 @@ class SWS_Bookings {
             return new \WP_Error( 'not_a_member', __( 'You must be a member to book events.', 'sws-members-club' ) );
         }
 
-        if ( $member->membership_status !== 'active' && $member->membership_status !== 'waitlist_only' ) {
-            return new \WP_Error( 'membership_inactive', __( 'Your membership is not active. Please contact us to reactivate.', 'sws-members-club' ) );
-        }
+        if ( ! $admin ) {
+            if ( $member->membership_status !== 'active' && $member->membership_status !== 'waitlist_only' ) {
+                return new \WP_Error( 'membership_inactive', __( 'Your membership is not active. Please contact us to reactivate.', 'sws-members-club' ) );
+            }
 
-        if ( $member->membership_status === 'waitlist_only' ) {
-            return new \WP_Error( 'waitlist_only', __( 'Your account is restricted to waitlist-only bookings due to penalty strikes.', 'sws-members-club' ) );
+            if ( $member->membership_status === 'waitlist_only' ) {
+                return new \WP_Error( 'waitlist_only', __( 'Your account is restricted to waitlist-only bookings due to penalty strikes.', 'sws-members-club' ) );
+            }
         }
 
         if ( $this->has_booking( $event_id, $user_id ) ) {
@@ -185,7 +187,7 @@ class SWS_Bookings {
      * }
      * @return array|WP_Error Array of booking IDs on success.
      */
-    public function create_booking( $data ) {
+    public function create_booking( $data, $admin = false ) {
         global $wpdb;
 
         $event_id      = (int) ( $data['event_id'] ?? 0 );
@@ -196,7 +198,7 @@ class SWS_Bookings {
         $payment_intent_id = sanitize_text_field( $data['payment_intent_id'] ?? '' );
 
         $quantity   = $include_guest ? 2 : 1;
-        $validation = $this->validate_booking( $event_id, $user_id, $quantity );
+        $validation = $this->validate_booking( $event_id, $user_id, $quantity, $admin );
 
         if ( is_wp_error( $validation ) ) {
             return $validation;
@@ -211,7 +213,9 @@ class SWS_Bookings {
         $tiers = new SWS_Tiers();
         $events_included = $tiers->tier_includes_events( $member->membership_tier_id );
 
-        if ( $events_included || (float) $event->ticket_price == 0 ) {
+        if ( $admin || $events_included || (float) $event->ticket_price == 0 ) {
+            // Admin bookings are always free (no payment taken).
+            // Premium tier and free events also skip payment.
             $amount_per_ticket = 0.00;
             $payment_intent_id = '';
         } else {

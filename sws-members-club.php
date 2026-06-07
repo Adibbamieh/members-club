@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'SWS_PLUGIN_VERSION', '1.0.0' );
+define( 'SWS_PLUGIN_VERSION', '1.2.0' );
 define( 'SWS_PLUGIN_FILE', __FILE__ );
 define( 'SWS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SWS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -116,6 +116,13 @@ add_filter( 'cron_schedules', 'sws_cron_schedules' );
 function sws_init() {
     // Ensure role exists (in case it was removed).
     sws_register_member_role();
+
+    // Run DB migrations if the plugin was updated (without re-activation).
+    // dbDelta safely ALTERs existing tables to add any new columns.
+    if ( get_option( 'sws_db_version' ) !== SWS_PLUGIN_VERSION ) {
+        $database = new SWS_Database();
+        $database->create_tables();
+    }
 
     // Load admin.
     if ( is_admin() ) {

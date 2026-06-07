@@ -13,6 +13,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <div class="sws-booking" data-event-id="<?php echo esc_attr( $event->id ); ?>">
+    <?php
+    // Feature image falls back to the cover image if no dedicated feature image is set.
+    $feature_id = isset( $event->feature_image_id ) ? (int) $event->feature_image_id : 0;
+    if ( ! $feature_id && isset( $event->cover_image_id ) ) {
+        $feature_id = (int) $event->cover_image_id;
+    }
+    if ( $feature_id ) :
+        $feature_url = wp_get_attachment_image_url( $feature_id, 'large' );
+        if ( $feature_url ) :
+    ?>
+        <div class="sws-booking__media">
+            <img class="sws-booking__image" src="<?php echo esc_url( $feature_url ); ?>" alt="<?php echo esc_attr( $event->title ); ?>">
+        </div>
+    <?php
+        endif;
+    endif;
+    ?>
     <div class="sws-booking__event-details">
         <h2 class="sws-booking__title"><?php echo esc_html( $event->title ); ?></h2>
 
@@ -58,6 +75,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             <button type="button" class="sws-booking__waitlist-button" data-event-id="<?php echo esc_attr( $event->id ); ?>">
                 <?php esc_html_e( 'Join Waitlist', 'sws-members-club' ); ?>
             </button>
+            <div class="sws-booking__messages" id="sws-waitlist-messages"></div>
         </div>
 
     <?php elseif ( $spots_remaining <= 0 ) : ?>
@@ -83,7 +101,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                         ?>
                     </p>
                 <?php else : ?>
-                    <p class="sws-booking__price-free"><?php esc_html_e( 'Free event', 'sws-members-club' ); ?></p>
+                    <p class="sws-booking__price-free"><?php esc_html_e( 'Complimentary event', 'sws-members-club' ); ?></p>
                 <?php endif; ?>
             </div>
 
@@ -119,7 +137,9 @@ if ( ! defined( 'ABSPATH' ) ) {
             <!-- Policy checkbox -->
             <div class="sws-booking__policy">
                 <label class="sws-booking__checkbox-label">
-                    <input type="checkbox" id="sws-agree-policy" name="agree_policy" required>
+                    <input type="checkbox" id="sws-agree-policy" name="agree_policy" required
+                        oninvalid="this.setCustomValidity('<?php echo esc_js( __( 'Please confirm before proceeding.', 'sws-members-club' ) ); ?>')"
+                        oninput="this.setCustomValidity('')">
                     <?php if ( $policy_url ) : ?>
                         <?php
                         printf(

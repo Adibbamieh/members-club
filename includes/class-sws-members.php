@@ -53,6 +53,59 @@ class SWS_Members {
     }
 
     /**
+     * Get a member's personal calendar subscription token, generating one on first use.
+     *
+     * The token is the credential for the public calendar feed URL (calendar apps
+     * cannot send WordPress nonces), so it is an unguessable 32-character string.
+     *
+     * @param int $user_id WordPress user ID.
+     * @return string|false Token, or false if the user has no member record.
+     */
+    public function get_or_create_calendar_token( $user_id ) {
+        global $wpdb;
+
+        $member = $this->get_by_user_id( $user_id );
+        if ( ! $member ) {
+            return false;
+        }
+
+        if ( ! empty( $member->calendar_token ) ) {
+            return $member->calendar_token;
+        }
+
+        $token = wp_generate_password( 32, false );
+        $wpdb->update(
+            $this->table,
+            array( 'calendar_token' => $token ),
+            array( 'user_id' => (int) $user_id )
+        );
+
+        return $token;
+    }
+
+    /**
+     * Look up a member by their calendar subscription token.
+     *
+     * @param string $token Calendar token.
+     * @return object|null
+     */
+    public function get_by_calendar_token( $token ) {
+        global $wpdb;
+
+        if ( empty( $token ) ) {
+            return null;
+        }
+
+        return $wpdb->get_row( $wpdb->prepare(
+            "SELECT m.*, t.name AS tier_name, t.slug AS tier_slug, t.events_included
+             FROM {$this->table} m
+             LEFT JOIN " . SWS_Database::table( 'membership_tiers' ) . " t ON m.membership_tier_id = t.id
+             WHERE m.calendar_token = %s",
+            $token
+        ) );
+    }
+
+    /**
      * List members with pagination, search, and filtering.
      *
      * @param array $args Query arguments.

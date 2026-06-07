@@ -263,6 +263,8 @@ class SWS_Events {
             'currency'                 => $event->currency,
             'cancellation_cutoff_hours' => $event->cancellation_cutoff_hours,
             'waitlist_enabled'         => $event->waitlist_enabled,
+            'cover_image_id'           => $event->cover_image_id ?? null,
+            'feature_image_id'         => $event->feature_image_id ?? null,
             'status'                   => 'draft',
         );
 
@@ -339,6 +341,14 @@ class SWS_Events {
         foreach ( $int_fields as $field ) {
             if ( isset( $data[ $field ] ) ) {
                 $sanitized[ $field ] = (int) $data[ $field ];
+            }
+        }
+
+        // Image attachment IDs (0 / empty clears the image).
+        $image_fields = array( 'cover_image_id', 'feature_image_id' );
+        foreach ( $image_fields as $field ) {
+            if ( isset( $data[ $field ] ) ) {
+                $sanitized[ $field ] = ! empty( $data[ $field ] ) ? (int) $data[ $field ] : null;
             }
         }
 

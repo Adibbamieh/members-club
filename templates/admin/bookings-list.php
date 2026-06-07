@@ -21,6 +21,12 @@ if ( ! defined( 'ABSPATH' ) ) {
     <?php if ( isset( $_GET['refunded'] ) ) : ?>
         <div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Booking refunded.', 'sws-members-club' ); ?></p></div>
     <?php endif; ?>
+    <?php if ( isset( $_GET['booked'] ) ) : ?>
+        <div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Member booked successfully.', 'sws-members-club' ); ?></p></div>
+    <?php endif; ?>
+    <?php if ( isset( $_GET['booking_error'] ) ) : ?>
+        <div class="notice notice-error is-dismissible"><p><?php echo esc_html( urldecode( $_GET['booking_error'] ) ); ?></p></div>
+    <?php endif; ?>
 
     <!-- Event summary -->
     <div class="sws-event-summary">
@@ -37,6 +43,67 @@ if ( ! defined( 'ABSPATH' ) ) {
         &bull;
         <strong>&pound;<?php echo esc_html( number_format( (float) $stats->revenue, 2 ) ); ?></strong> <?php esc_html_e( 'revenue', 'sws-members-club' ); ?>
     </div>
+
+    <?php if ( $event->status === 'published' ) : ?>
+        <?php
+        $members_model  = new SWS_Members();
+        $active_members = $members_model->list_members( array( 'per_page' => 500, 'status' => 'active', 'orderby' => 'display_name', 'order' => 'ASC' ) );
+        ?>
+        <div class="postbox" style="margin-bottom: 20px;">
+            <button type="button" class="handlediv sws-toggle-form" aria-expanded="false">
+                <span class="toggle-indicator" aria-hidden="true"></span>
+            </button>
+            <h2 class="hndle" style="cursor: pointer;" onclick="this.parentElement.querySelector('.inside').style.display = this.parentElement.querySelector('.inside').style.display === 'none' ? 'block' : 'none'; this.parentElement.querySelector('.sws-toggle-form').setAttribute('aria-expanded', this.parentElement.querySelector('.inside').style.display !== 'none');">
+                <?php esc_html_e( 'Book a Member', 'sws-members-club' ); ?>
+            </h2>
+            <div class="inside" style="display: none;">
+                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+                    <input type="hidden" name="action" value="sws_admin_book_member">
+                    <input type="hidden" name="event_id" value="<?php echo esc_attr( $event->id ); ?>">
+                    <?php wp_nonce_field( 'sws_admin_book_member', 'sws_nonce' ); ?>
+
+                    <table class="form-table">
+                        <tr>
+                            <th><label for="sws_member_user_id"><?php esc_html_e( 'Member', 'sws-members-club' ); ?></label></th>
+                            <td>
+                                <select name="member_user_id" id="sws_member_user_id" required>
+                                    <option value=""><?php esc_html_e( '— Select a member —', 'sws-members-club' ); ?></option>
+                                    <?php foreach ( $active_members['items'] as $m ) : ?>
+                                        <option value="<?php echo esc_attr( $m->user_id ); ?>">
+                                            <?php echo esc_html( $m->display_name . ' (' . $m->user_email . ') — ' . $m->tier_name ); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><?php esc_html_e( 'Guest (+1)', 'sws-members-club' ); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="include_guest" id="sws_admin_include_guest" value="1">
+                                    <?php esc_html_e( 'Include a guest ticket', 'sws-members-club' ); ?>
+                                </label>
+                            </td>
+                        </tr>
+                        <tr class="sws-admin-guest-fields" style="display: none;">
+                            <th><label for="sws_admin_guest_name"><?php esc_html_e( 'Guest Name', 'sws-members-club' ); ?></label></th>
+                            <td><input type="text" name="guest_name" id="sws_admin_guest_name" class="regular-text"></td>
+                        </tr>
+                        <tr class="sws-admin-guest-fields" style="display: none;">
+                            <th><label for="sws_admin_guest_email"><?php esc_html_e( 'Guest Email', 'sws-members-club' ); ?></label></th>
+                            <td><input type="email" name="guest_email" id="sws_admin_guest_email" class="regular-text"></td>
+                        </tr>
+                    </table>
+
+                    <p class="description" style="margin-bottom: 12px;">
+                        <?php esc_html_e( 'Admin bookings are created without payment. A confirmation email with calendar invite will be sent to the member.', 'sws-members-club' ); ?>
+                    </p>
+
+                    <?php submit_button( __( 'Book Member', 'sws-members-club' ), 'primary', 'submit', false ); ?>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <table class="wp-list-table widefat fixed striped">
         <thead>

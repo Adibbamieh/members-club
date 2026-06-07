@@ -15,6 +15,14 @@ class SWS_Emails {
     /**
      * Send booking confirmation email.
      *
+     * Recipient logic:
+     *  - Guest ticket (is_guest_ticket = 1) → send to guest_email
+     *  - Member ticket → send to member's WordPress user email
+     *
+     * This ensures each recipient (member, guest) receives exactly one email
+     * with their own ticket and calendar invite, avoiding the "two emails to
+     * member, none to guest" bug.
+     *
      * @param int $booking_id Booking ID.
      */
     public static function send_booking_confirmation( $booking_id ) {
@@ -30,7 +38,15 @@ class SWS_Emails {
             return;
         }
 
-        $to      = $user->user_email;
+        // Determine the recipient based on ticket type.
+        if ( $booking->is_guest_ticket && ! empty( $booking->guest_email ) ) {
+            $to            = $booking->guest_email;
+            $recipient_name = ! empty( $booking->guest_name ) ? $booking->guest_name : __( 'Guest', 'sws-members-club' );
+        } else {
+            $to            = $user->user_email;
+            $recipient_name = $user->display_name;
+        }
+
         $subject = sprintf(
             /* translators: %s: event title */
             __( 'Your ticket for %s is confirmed', 'sws-members-club' ),
@@ -38,6 +54,8 @@ class SWS_Emails {
         );
 
         $vars = self::booking_template_vars( $booking, $user );
+        // Override member_name with the actual recipient (guest or member) for the greeting.
+        $vars['member_name'] = $recipient_name;
         $body = self::render_template( 'booking-confirmation.php', $vars );
 
         // Generate .ics attachment.

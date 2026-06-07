@@ -75,10 +75,17 @@ class SWS_Rest_Api {
             'permission_callback' => array( $this, 'is_logged_in' ),
         ) );
 
-        // Calendar .ics download.
+        // Calendar .ics download (single booking).
         register_rest_route( $namespace, '/calendar/(?P<booking_id>\d+)\.ics', array(
             'methods'             => 'GET',
             'callback'            => array( $this, 'download_ics' ),
+            'permission_callback' => '__return_true',
+        ) );
+
+        // Personal calendar subscription feed (all upcoming bookings).
+        register_rest_route( $namespace, '/calendar/feed/(?P<token>[a-zA-Z0-9]+)\.ics', array(
+            'methods'             => 'GET',
+            'callback'            => array( $this, 'download_feed' ),
             'permission_callback' => '__return_true',
         ) );
 
@@ -373,11 +380,50 @@ class SWS_Rest_Api {
 
         $ics = SWS_Calendar::generate_ics( $booking );
 
-        $response = new \WP_REST_Response( $ics );
-        $response->header( 'Content-Type', 'text/calendar; charset=utf-8' );
-        $response->header( 'Content-Disposition', 'attachment; filename="event-' . $booking->event_id . '.ics"' );
+        // Output raw ICS, bypassing WP_REST_Response JSON wrapping.
+        // Apple Calendar/Outlook need raw text/calendar content, not a JSON-encoded string.
+        if ( ! headers_sent() ) {
+            nocache_headers();
+            header( 'Content-Type: text/calendar; charset=utf-8' );
+            header( 'Content-Disposition: attachment; filename="event-' . $booking->event_id . '.ics"' );
+        }
+        echo $ics;
+        exit;
+    }
 
-        return $response;
+    /**
+     * Output a member's personal calendar subscription feed.
+     *
+     * Accessed by calendar apps via an unguessable per-member token (no WP auth),
+     * so the token in the URL is the credential. Returns all upcoming CONFIRMED
+     * bookings as a single auto-refreshing calendar.
+     */
+    public function download_feed( $request ) {
+        $token   = sanitize_text_field( $request['token'] );
+        $members = new SWS_Members();
+        $member  = $members->get_by_calendar_token( $token );
+
+        if ( ! $member ) {
+            return new \WP_Error( 'not_found', __( 'Calendar not found.', 'sws-members-club' ), array( 'status' => 404 ) );
+        }
+
+        $bookings_model = new SWS_Bookings();
+        $upcoming       = $bookings_model->get_member_bookings( $member->user_id, 'upcoming' );
+
+        // Only confirmed bookings belong on a calendar (exclude waitlisted).
+        $confirmed = array_filter( (array) $upcoming, function ( $b ) {
+            return isset( $b->status ) && $b->status === 'confirmed';
+        } );
+
+        $ics = SWS_Calendar::generate_feed_ics( $confirmed );
+
+        // Output raw ICS inline (no attachment) so calendar clients subscribe to it.
+        if ( ! headers_sent() ) {
+            nocache_headers();
+            header( 'Content-Type: text/calendar; charset=utf-8' );
+        }
+        echo $ics;
+        exit;
     }
 
     // -------------------------------------------------------------------------

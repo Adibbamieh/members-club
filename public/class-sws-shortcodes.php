@@ -205,11 +205,25 @@ class SWS_Shortcodes {
             $events_included = $tiers->tier_includes_events( $member->membership_tier_id );
         }
 
+        // Build the personal calendar subscription URLs.
+        $calendar_feed_url     = '';
+        $calendar_webcal_url   = '';
+        if ( $member ) {
+            $token = $members_model->get_or_create_calendar_token( $user_id );
+            if ( $token ) {
+                $calendar_feed_url   = rest_url( 'sws/v1/calendar/feed/' . $token . '.ics' );
+                // webcal:// triggers one-click subscribe on iOS / macOS / Google Calendar.
+                $calendar_webcal_url = preg_replace( '#^https?://#', 'webcal://', $calendar_feed_url );
+            }
+        }
+
         return SWS_Template_Loader::render( 'my-tickets.php', array(
-            'upcoming'        => $upcoming,
-            'past'            => $past,
-            'member'          => $member,
-            'events_included' => $events_included,
+            'upcoming'            => $upcoming,
+            'past'                => $past,
+            'member'              => $member,
+            'events_included'     => $events_included,
+            'calendar_feed_url'   => $calendar_feed_url,
+            'calendar_webcal_url' => $calendar_webcal_url,
         ) );
     }
 

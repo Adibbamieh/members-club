@@ -21,6 +21,7 @@
         initCalendarDropdowns();
         initTabs();
         initWaitlistButtons();
+        initCalendarSubscribe();
     });
 
     // -------------------------------------------------------------------------
@@ -283,18 +284,72 @@
         document.querySelectorAll('.sws-booking__waitlist-button').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var eventId = btn.dataset.eventId;
+                var messagesEl = document.getElementById('sws-waitlist-messages');
                 btn.disabled = true;
                 btn.textContent = swsData.i18n.booking;
+                if (messagesEl) messagesEl.innerHTML = '';
 
                 apiPost('waitlist/' + eventId, {}).then(function (result) {
-                    btn.textContent = result.message;
+                    // Hide the button, show success message in its place.
+                    btn.style.display = 'none';
+                    if (messagesEl) {
+                        showMessage(messagesEl, result.message, 'success');
+                    } else {
+                        btn.style.display = '';
+                        btn.disabled = true;
+                        btn.textContent = result.message;
+                    }
                 }).catch(function (err) {
                     btn.disabled = false;
                     btn.textContent = 'Join Waitlist';
-                    alert(err.message || swsData.i18n.error);
+                    if (messagesEl) {
+                        showMessage(messagesEl, err.message || swsData.i18n.error, 'error');
+                    } else {
+                        alert(err.message || swsData.i18n.error);
+                    }
                 });
             });
         });
+    }
+
+    // -------------------------------------------------------------------------
+    // Calendar subscribe: copy link to clipboard
+    // -------------------------------------------------------------------------
+
+    function initCalendarSubscribe() {
+        document.querySelectorAll('.sws-calendar-subscribe__copy').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var url = btn.getAttribute('data-clipboard') || '';
+                if (!url) return;
+
+                var original = btn.textContent;
+                var done = function () {
+                    btn.textContent = 'Copied!';
+                    setTimeout(function () { btn.textContent = original; }, 2000);
+                };
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(url).then(done).catch(function () {
+                        fallbackCopy(url, done);
+                    });
+                } else {
+                    fallbackCopy(url, done);
+                }
+            });
+        });
+    }
+
+    function fallbackCopy(text, onDone) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        if (onDone) onDone();
     }
 
     // -------------------------------------------------------------------------
@@ -335,8 +390,21 @@
     // -------------------------------------------------------------------------
 
     function showMessage(container, text, type) {
-        container.innerHTML = '<div class="sws-booking__notice sws-booking__notice--' +
-            (type === 'error' ? 'warning' : 'info') + '"><p>' + escHtml(text) + '</p></div>';
+        var variant = 'info';
+        if (type === 'error') variant = 'warning';
+        if (type === 'success') variant = 'success';
+
+        container.innerHTML = '<div class="sws-booking__notice sws-booking__notice--' + variant +
+            '"><p>' + escHtml(text) + '</p></div>';
+
+        // Scroll the message into view so the user sees it.
+        if (container.scrollIntoView) {
+            try {
+                container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } catch (e) {
+                container.scrollIntoView();
+            }
+        }
     }
 
     function escHtml(str) {

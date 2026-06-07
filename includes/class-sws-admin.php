@@ -25,6 +25,7 @@ class SWS_Admin {
         add_action( 'admin_post_sws_admin_refund', array( $this, 'handle_admin_refund' ) );
         add_action( 'admin_post_sws_admin_remove_waitlist', array( $this, 'handle_admin_remove_waitlist' ) );
         add_action( 'admin_post_sws_export_csv', array( $this, 'handle_export_csv' ) );
+        add_action( 'admin_post_sws_admin_book_member', array( $this, 'handle_admin_book_member' ) );
     }
 
     /**
@@ -140,6 +141,9 @@ class SWS_Admin {
             array(),
             SWS_PLUGIN_VERSION
         );
+
+        // Load the WordPress media library (needed for event image uploaders).
+        wp_enqueue_media();
 
         wp_enqueue_script(
             'sws-admin',
@@ -425,6 +429,8 @@ class SWS_Admin {
             'ticket_price'              => $_POST['ticket_price'] ?? 0,
             'cancellation_cutoff_hours' => $_POST['cancellation_cutoff_hours'] ?? 48,
             'waitlist_enabled'          => isset( $_POST['waitlist_enabled'] ) ? 1 : 0,
+            'cover_image_id'            => $_POST['cover_image_id'] ?? '',
+            'feature_image_id'          => $_POST['feature_image_id'] ?? '',
             'status'                    => $_POST['status'] ?? 'draft',
         );
 
@@ -590,6 +596,42 @@ class SWS_Admin {
 
         $event_id = $booking ? $booking->event_id : 0;
         wp_safe_redirect( admin_url( 'admin.php?page=sws-bookings&event_id=' . $event_id ) );
+        exit;
+    }
+
+    /**
+     * Handle admin booking a member into an event.
+     */
+    public function handle_admin_book_member() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( __( 'Unauthorized.', 'sws-members-club' ) );
+        }
+
+        check_admin_referer( 'sws_admin_book_member', 'sws_nonce' );
+
+        $event_id    = isset( $_POST['event_id'] ) ? (int) $_POST['event_id'] : 0;
+        $user_id     = isset( $_POST['member_user_id'] ) ? (int) $_POST['member_user_id'] : 0;
+
+        if ( ! $event_id || ! $user_id ) {
+            wp_safe_redirect( admin_url( 'admin.php?page=sws-bookings&event_id=' . $event_id . '&booking_error=' . urlencode( __( 'Please select a member.', 'sws-members-club' ) ) ) );
+            exit;
+        }
+
+        $bookings = new SWS_Bookings();
+        $result   = $bookings->create_booking( array(
+            'event_id'          => $event_id,
+            'user_id'           => $user_id,
+            'include_guest'     => isset( $_POST['include_guest'] ) && $_POST['include_guest'] === '1',
+            'guest_name'        => isset( $_POST['guest_name'] ) ? sanitize_text_field( $_POST['guest_name'] ) : '',
+            'guest_email'       => isset( $_POST['guest_email'] ) ? sanitize_email( $_POST['guest_email'] ) : '',
+            'payment_intent_id' => '',
+        ), true ); // true = admin booking, bypasses status checks and payment
+
+        if ( is_wp_error( $result ) ) {
+            wp_safe_redirect( admin_url( 'admin.php?page=sws-bookings&event_id=' . $event_id . '&booking_error=' . urlencode( $result->get_error_message() ) ) );
+        } else {
+            wp_safe_redirect( admin_url( 'admin.php?page=sws-bookings&event_id=' . $event_id . '&booked=1' ) );
+        }
         exit;
     }
 

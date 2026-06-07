@@ -28,6 +28,21 @@ $booking_base_url = $booking_page_id ? get_permalink( $booking_page_id ) : get_p
         <div class="sws-events__grid">
             <?php foreach ( $events as $event ) : ?>
                 <div class="sws-event-card" data-event-id="<?php echo esc_attr( $event->id ); ?>">
+                    <?php
+                    $cover_id = isset( $event->cover_image_id ) ? (int) $event->cover_image_id : 0;
+                    if ( $cover_id ) :
+                        $cover_url = wp_get_attachment_image_url( $cover_id, 'large' );
+                        if ( $cover_url ) :
+                    ?>
+                        <div class="sws-event-card__media">
+                            <a href="<?php echo esc_url( add_query_arg( 'event_id', $event->id, $booking_base_url ) ); ?>">
+                                <img class="sws-event-card__image" src="<?php echo esc_url( $cover_url ); ?>" alt="<?php echo esc_attr( $event->title ); ?>" loading="lazy">
+                            </a>
+                        </div>
+                    <?php
+                        endif;
+                    endif;
+                    ?>
                     <div class="sws-event-card__header">
                         <h3 class="sws-event-card__title"><?php echo esc_html( $event->title ); ?></h3>
                         <span class="sws-event-card__date">
@@ -54,7 +69,7 @@ $booking_base_url = $booking_page_id ? get_permalink( $booking_page_id ) : get_p
                             <?php elseif ( (float) $event->ticket_price > 0 ) : ?>
                                 <span class="sws-event-card__price-amount">&pound;<?php echo esc_html( number_format( (float) $event->ticket_price, 2 ) ); ?></span>
                             <?php else : ?>
-                                <span class="sws-event-card__price-free"><?php esc_html_e( 'Free', 'sws-members-club' ); ?></span>
+                                <span class="sws-event-card__price-free"><?php esc_html_e( 'Complimentary', 'sws-members-club' ); ?></span>
                             <?php endif; ?>
                         </div>
 

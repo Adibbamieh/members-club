@@ -4,14 +4,37 @@
  *
  * Override by copying to: {theme}/sws-members-club/my-tickets.php
  *
- * Variables: $upcoming, $past, $member, $events_included
+ * Variables: $upcoming, $past, $member, $events_included,
+ *            $calendar_feed_url, $calendar_webcal_url
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
+
+$calendar_feed_url   = $calendar_feed_url ?? '';
+$calendar_webcal_url = $calendar_webcal_url ?? '';
 ?>
 <div class="sws-my-tickets">
+
+    <?php if ( $calendar_webcal_url ) : ?>
+        <!-- Calendar subscription -->
+        <div class="sws-calendar-subscribe">
+            <div class="sws-calendar-subscribe__text">
+                <strong class="sws-calendar-subscribe__title"><?php esc_html_e( 'Sync your events', 'sws-members-club' ); ?></strong>
+                <span class="sws-calendar-subscribe__desc"><?php esc_html_e( 'Subscribe once and your bookings stay up to date in your calendar automatically.', 'sws-members-club' ); ?></span>
+            </div>
+            <div class="sws-calendar-subscribe__actions">
+                <a class="sws-calendar-subscribe__button" href="<?php echo esc_url( $calendar_webcal_url, array( 'webcal' ) ); ?>">
+                    <?php esc_html_e( 'Subscribe to your calendar', 'sws-members-club' ); ?>
+                </a>
+                <button type="button" class="sws-calendar-subscribe__copy" data-clipboard="<?php echo esc_attr( $calendar_feed_url ); ?>">
+                    <?php esc_html_e( 'Copy link', 'sws-members-club' ); ?>
+                </button>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <!-- Tab navigation -->
     <div class="sws-my-tickets__tabs">
         <button class="sws-my-tickets__tab sws-my-tickets__tab--active" data-tab="upcoming">
@@ -67,7 +90,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                                 <?php elseif ( $events_included ) : ?>
                                     <?php esc_html_e( 'Included with membership', 'sws-members-club' ); ?>
                                 <?php else : ?>
-                                    <?php esc_html_e( 'Free', 'sws-members-club' ); ?>
+                                    <?php esc_html_e( 'Complimentary', 'sws-members-club' ); ?>
                                 <?php endif; ?>
                             </div>
                         </div>

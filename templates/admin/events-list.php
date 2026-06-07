@@ -91,7 +91,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                             <?php if ( (float) $event->ticket_price > 0 ) : ?>
                                 &pound;<?php echo esc_html( number_format( (float) $event->ticket_price, 2 ) ); ?>
                             <?php else : ?>
-                                <?php esc_html_e( 'Free', 'sws-members-club' ); ?>
+                                <?php esc_html_e( 'Complimentary', 'sws-members-club' ); ?>
                             <?php endif; ?>
                         </td>
                         <td><?php echo esc_html( $stats->confirmed . ' / ' . $event->capacity ); ?></td>
