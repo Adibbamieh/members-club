@@ -2,7 +2,7 @@
 /**
  * Plugin Name: SWS Members Club
  * Description: Membership billing and event ticketing management for a premium private members club.
- * Version: 1.0.0
+ * Version: 1.2.0
  * Author: SWS
  * Text Domain: sws-members-club
  * Domain Path: /languages
