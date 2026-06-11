@@ -160,8 +160,9 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <?php esc_html_e( 'Book Now', 'sws-members-club' ); ?>
                 </button>
             </div>
-
-            <div class="sws-booking__messages" id="sws-booking-messages"></div>
         </form>
+
+        <!-- Messages live OUTSIDE the form so they remain visible after the form is hidden on success. -->
+        <div class="sws-booking__messages" id="sws-booking-messages"></div>
     <?php endif; ?>
 </div>

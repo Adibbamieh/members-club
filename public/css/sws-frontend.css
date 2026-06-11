@@ -468,7 +468,8 @@
 .sws-event-card__image {
     display: block;
     width: 100%;
-    height: auto;
+    height: 180px;
+    object-fit: cover;
 }
 
 .sws-booking__media {
@@ -478,7 +479,9 @@
 .sws-booking__image {
     display: block;
     width: 100%;
-    height: auto;
+    height: 320px;
+    object-fit: cover;
+    border-radius: 8px;
 }
 
 /* Calendar subscription bar (structural only) */
