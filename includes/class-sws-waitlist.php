@@ -117,12 +117,11 @@ class SWS_Waitlist {
             return new \WP_Error( 'event_unavailable', __( 'This event is no longer available.', 'sws-members-club' ) );
         }
 
-        // Determine if payment is needed.
-        $members = new SWS_Members();
-        $tiers   = new SWS_Tiers();
-        $member  = $members->get_by_user_id( $booking->member_user_id );
+        // Determine if payment is needed (tier comes from WooCommerce).
+        $members    = new SWS_Members();
+        $membership = $members->get_membership( $booking->member_user_id );
 
-        $events_included = $member && $tiers->tier_includes_events( $member->membership_tier_id );
+        $events_included = $membership->events_included;
         $needs_payment   = ! $events_included && (float) $booking->ticket_price > 0;
 
         $amount_paid = 0.00;

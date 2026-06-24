@@ -129,8 +129,8 @@ class SWS_Bookings {
         $events  = new SWS_Events();
         $members = new SWS_Members();
 
-        $event  = $events->get( $event_id );
-        $member = $members->get_by_user_id( $user_id );
+        $event      = $events->get( $event_id );
+        $membership = $members->get_membership( $user_id );
 
         if ( ! $event ) {
             return new \WP_Error( 'event_not_found', __( 'Event not found.', 'sws-members-club' ) );
@@ -140,16 +140,14 @@ class SWS_Bookings {
             return new \WP_Error( 'event_not_available', __( 'This event is not available for booking.', 'sws-members-club' ) );
         }
 
-        if ( ! $member ) {
-            return new \WP_Error( 'not_a_member', __( 'You must be a member to book events.', 'sws-members-club' ) );
-        }
-
         if ( ! $admin ) {
-            if ( $member->membership_status !== 'active' && $member->membership_status !== 'waitlist_only' ) {
-                return new \WP_Error( 'membership_inactive', __( 'Your membership is not active. Please contact us to reactivate.', 'sws-members-club' ) );
+            // Active membership is owned by WooCommerce Subscriptions.
+            if ( ! $membership->is_active ) {
+                return new \WP_Error( 'membership_inactive', __( 'You need an active membership to book events.', 'sws-members-club' ) );
             }
 
-            if ( $member->membership_status === 'waitlist_only' ) {
+            // Penalty restriction is owned by this plugin.
+            if ( $membership->restricted ) {
                 return new \WP_Error( 'waitlist_only', __( 'Your account is restricted to waitlist-only bookings due to penalty strikes.', 'sws-members-club' ) );
             }
         }
@@ -207,11 +205,11 @@ class SWS_Bookings {
         $events  = new SWS_Events();
         $members = new SWS_Members();
         $event   = $events->get( $event_id );
-        $member  = $members->get_by_user_id( $user_id );
 
-        // Determine price per ticket.
-        $tiers = new SWS_Tiers();
-        $events_included = $tiers->tier_includes_events( $member->membership_tier_id );
+        // Determine price per ticket — tier (and its events-included flag) comes
+        // from the member's WooCommerce subscription.
+        $membership      = $members->get_membership( $user_id );
+        $events_included = $membership->events_included;
 
         if ( $admin || $events_included || (float) $event->ticket_price == 0 ) {
             // Admin bookings are always free (no payment taken).
@@ -354,18 +352,15 @@ class SWS_Bookings {
         $events  = new SWS_Events();
         $members = new SWS_Members();
 
-        $event  = $events->get( $event_id );
-        $member = $members->get_by_user_id( $user_id );
+        $event      = $events->get( $event_id );
+        $membership = $members->get_membership( $user_id );
 
-        if ( ! $event || ! $member ) {
+        if ( ! $event ) {
             return new \WP_Error( 'invalid', __( 'Invalid event or member.', 'sws-members-club' ) );
         }
 
-        $tiers           = new SWS_Tiers();
-        $events_included = $tiers->tier_includes_events( $member->membership_tier_id );
-
-        // No payment needed.
-        if ( $events_included || (float) $event->ticket_price == 0 ) {
+        // No payment needed: events-included tier or a free event.
+        if ( $membership->events_included || (float) $event->ticket_price == 0 ) {
             return array(
                 'client_secret'    => '',
                 'payment_intent_id' => '',
@@ -379,7 +374,7 @@ class SWS_Bookings {
         $result = SWS_Stripe::create_payment_intent(
             $total,
             $event->currency ?: 'GBP',
-            $member->stripe_customer_id ?: '',
+            '',
             array(
                 'event_id'  => $event_id,
                 'user_id'   => $user_id,

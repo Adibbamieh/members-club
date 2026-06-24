@@ -98,15 +98,13 @@ class SWS_Shortcodes {
 
         $events = $result['items'];
 
-        // Get member info for pricing display.
+        // Get member info for pricing display (tier comes from WooCommerce).
         $member           = null;
         $events_included  = false;
         if ( is_user_logged_in() ) {
-            $member = $members_model->get_by_user_id( get_current_user_id() );
-            if ( $member ) {
-                $tiers           = new SWS_Tiers();
-                $events_included = $tiers->tier_includes_events( $member->membership_tier_id );
-            }
+            $membership      = $members_model->get_membership( get_current_user_id() );
+            $member          = $membership;
+            $events_included = $membership->events_included;
         }
 
         // Build event data with availability.
@@ -156,13 +154,14 @@ class SWS_Shortcodes {
             return '<p class="sws-notice">' . esc_html__( 'Please log in to book this event.', 'sws-members-club' ) . '</p>';
         }
 
-        $member = $members_model->get_by_user_id( get_current_user_id() );
-        if ( ! $member ) {
-            return '<p class="sws-notice">' . esc_html__( 'You must be a member to book events.', 'sws-members-club' ) . '</p>';
+        $membership = $members_model->get_membership( get_current_user_id() );
+
+        // Not an active member (no active WooCommerce subscription).
+        if ( ! $membership->is_active ) {
+            return '<p class="sws-notice">' . esc_html__( 'You need an active membership to book events.', 'sws-members-club' ) . '</p>';
         }
 
-        $tiers           = new SWS_Tiers();
-        $events_included = $tiers->tier_includes_events( $member->membership_tier_id );
+        $events_included = $membership->events_included;
         $confirmed       = $bookings_model->count_confirmed( $event_id );
         $spots_remaining = max( 0, (int) $event->capacity - $confirmed );
         $already_booked  = $bookings_model->has_booking( $event_id, get_current_user_id() );
@@ -171,7 +170,7 @@ class SWS_Shortcodes {
 
         return SWS_Template_Loader::render( 'booking-form.php', array(
             'event'           => $event,
-            'member'          => $member,
+            'member'          => $membership,
             'events_included' => $events_included,
             'spots_remaining' => $spots_remaining,
             'already_booked'  => $already_booked,
@@ -194,33 +193,27 @@ class SWS_Shortcodes {
         $bookings_model = new SWS_Bookings();
         $members_model  = new SWS_Members();
 
-        $user_id  = get_current_user_id();
-        $member   = $members_model->get_by_user_id( $user_id );
-        $upcoming = $bookings_model->get_member_bookings( $user_id, 'upcoming' );
-        $past     = $bookings_model->get_member_bookings( $user_id, 'past' );
+        $user_id    = get_current_user_id();
+        $membership = $members_model->get_membership( $user_id );
+        $upcoming   = $bookings_model->get_member_bookings( $user_id, 'upcoming' );
+        $past       = $bookings_model->get_member_bookings( $user_id, 'past' );
 
-        $events_included = false;
-        if ( $member ) {
-            $tiers           = new SWS_Tiers();
-            $events_included = $tiers->tier_includes_events( $member->membership_tier_id );
-        }
+        $events_included = $membership->events_included;
 
         // Build the personal calendar subscription URLs.
-        $calendar_feed_url     = '';
-        $calendar_webcal_url   = '';
-        if ( $member ) {
-            $token = $members_model->get_or_create_calendar_token( $user_id );
-            if ( $token ) {
-                $calendar_feed_url   = rest_url( 'sws/v1/calendar/feed/' . $token . '.ics' );
-                // webcal:// triggers one-click subscribe on iOS / macOS / Google Calendar.
-                $calendar_webcal_url = preg_replace( '#^https?://#', 'webcal://', $calendar_feed_url );
-            }
+        $token               = $members_model->get_or_create_calendar_token( $user_id );
+        $calendar_feed_url   = '';
+        $calendar_webcal_url = '';
+        if ( $token ) {
+            $calendar_feed_url   = rest_url( 'sws/v1/calendar/feed/' . $token . '.ics' );
+            // webcal:// triggers one-click subscribe on iOS / macOS / Google Calendar.
+            $calendar_webcal_url = preg_replace( '#^https?://#', 'webcal://', $calendar_feed_url );
         }
 
         return SWS_Template_Loader::render( 'my-tickets.php', array(
             'upcoming'            => $upcoming,
             'past'                => $past,
-            'member'              => $member,
+            'member'              => $membership,
             'events_included'     => $events_included,
             'calendar_feed_url'   => $calendar_feed_url,
             'calendar_webcal_url' => $calendar_webcal_url,

@@ -281,17 +281,18 @@ class SWS_Rest_Api {
         $user_id  = get_current_user_id();
         $event_id = (int) $request['event_id'];
 
-        $events  = new SWS_Events();
-        $members = new SWS_Members();
-        $event   = $events->get( $event_id );
-        $member  = $members->get_by_user_id( $user_id );
+        $events     = new SWS_Events();
+        $members    = new SWS_Members();
+        $event      = $events->get( $event_id );
+        $membership = $members->get_membership( $user_id );
 
         if ( ! $event || $event->status !== 'published' ) {
             return new \WP_Error( 'not_found', __( 'Event not found.', 'sws-members-club' ), array( 'status' => 404 ) );
         }
 
-        if ( ! $member || ! in_array( $member->membership_status, array( 'active', 'waitlist_only' ), true ) ) {
-            return new \WP_Error( 'not_eligible', __( 'You are not eligible to join the waitlist.', 'sws-members-club' ), array( 'status' => 403 ) );
+        // Active members (including those restricted to waitlist-only) may join.
+        if ( ! $membership->is_active ) {
+            return new \WP_Error( 'not_eligible', __( 'You need an active membership to join the waitlist.', 'sws-members-club' ), array( 'status' => 403 ) );
         }
 
         if ( ! $event->waitlist_enabled ) {
@@ -346,22 +347,19 @@ class SWS_Rest_Api {
     // -------------------------------------------------------------------------
 
     public function get_member_status( $request ) {
-        $user_id = get_current_user_id();
-        $members = new SWS_Members();
-        $member  = $members->get_by_user_id( $user_id );
-
-        if ( ! $member ) {
-            return new \WP_Error( 'not_a_member', __( 'No membership found.', 'sws-members-club' ), array( 'status' => 404 ) );
-        }
+        $user_id    = get_current_user_id();
+        $members    = new SWS_Members();
+        $membership = $members->get_membership( $user_id );
 
         return rest_ensure_response( array(
-            'tier'             => $member->tier_name,
-            'tier_slug'        => $member->tier_slug,
-            'events_included'  => (bool) $member->events_included,
-            'status'           => $member->membership_status,
-            'strikes'          => (int) $member->penalty_strikes,
+            'tier'             => $membership->tier_name,
+            'tier_slug'        => $membership->tier_slug,
+            'events_included'  => (bool) $membership->events_included,
+            'is_active'        => (bool) $membership->is_active,
+            'restricted'       => (bool) $membership->restricted,
+            'can_book'         => (bool) $membership->can_book,
+            'strikes'          => (int) $membership->strikes,
             'max_strikes'      => (int) get_option( 'sws_penalty_max_strikes', 3 ),
-            'billing_cycle'    => $member->billing_cycle,
         ) );
     }
 

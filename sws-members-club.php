@@ -2,7 +2,7 @@
 /**
  * Plugin Name: SWS Members Club
  * Description: Membership billing and event ticketing management for a premium private members club.
- * Version: 1.2.1
+ * Version: 1.3.0
  * Author: SWS
  * Text Domain: sws-members-club
  * Domain Path: /languages
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'SWS_PLUGIN_VERSION', '1.2.1' );
+define( 'SWS_PLUGIN_VERSION', '1.3.0' );
 define( 'SWS_PLUGIN_FILE', __FILE__ );
 define( 'SWS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SWS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -60,15 +60,17 @@ function sws_activate() {
     sws_register_member_role();
 
     // Schedule cron jobs.
-    if ( ! wp_next_scheduled( 'sws_daily_stripe_sync' ) ) {
-        wp_schedule_event( time(), 'daily', 'sws_daily_stripe_sync' );
-    }
+    // Note: recurring membership billing is handled by WooCommerce Subscriptions,
+    // so this plugin no longer runs its own Stripe subscription sync.
     if ( ! wp_next_scheduled( 'sws_check_reminders' ) ) {
         wp_schedule_event( time(), 'fifteen_minutes', 'sws_check_reminders' );
     }
     if ( ! wp_next_scheduled( 'sws_check_waitlist_expiry' ) ) {
         wp_schedule_event( time(), 'fifteen_minutes', 'sws_check_waitlist_expiry' );
     }
+
+    // Clear the legacy Stripe-sync cron if upgrading from an older version.
+    wp_clear_scheduled_hook( 'sws_daily_stripe_sync' );
 
     flush_rewrite_rules();
 }
@@ -136,14 +138,6 @@ function sws_init() {
     new SWS_Shortcodes();
 }
 add_action( 'plugins_loaded', 'sws_init' );
-
-/**
- * Hook: daily Stripe subscription sync.
- */
-add_action( 'sws_daily_stripe_sync', function () {
-    $members = new SWS_Members();
-    $members->sync_all_stripe_subscriptions();
-} );
 
 /**
  * Hook: check and send event reminders (every 15 minutes).

@@ -161,31 +161,4 @@ class SWS_Stripe {
         $data = json_decode( wp_remote_retrieve_body( $response ), true );
         return isset( $data['id'] ) && ! isset( $data['error'] );
     }
-
-    /**
-     * Retrieve a Stripe subscription status.
-     *
-     * @param string $subscription_id Stripe Subscription ID.
-     * @return string|false Subscription status or false on error.
-     */
-    public static function get_subscription_status( $subscription_id ) {
-        $secret = self::get_secret_key();
-        if ( empty( $secret ) ) {
-            return false;
-        }
-
-        $response = wp_remote_get( 'https://api.stripe.com/v1/subscriptions/' . $subscription_id, array(
-            'headers' => array(
-                'Authorization' => 'Bearer ' . $secret,
-            ),
-            'timeout' => 15,
-        ) );
-
-        if ( is_wp_error( $response ) ) {
-            return false;
-        }
-
-        $data = json_decode( wp_remote_retrieve_body( $response ), true );
-        return $data['status'] ?? false;
-    }
 }

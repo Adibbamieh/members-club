@@ -196,14 +196,16 @@ class SWS_Admin {
         $members_model = new SWS_Members();
         $tiers_model   = new SWS_Tiers();
 
-        $member = $members_model->get_by_user_id( $user_id );
+        $member = $members_model->ensure_record( $user_id );
         if ( ! $member ) {
             echo '<div class="wrap"><h1>' . esc_html__( 'Member not found.', 'sws-members-club' ) . '</h1></div>';
             return;
         }
 
-        $user  = get_userdata( $user_id );
-        $tiers = $tiers_model->get_all();
+        // Active status + tier come from WooCommerce.
+        $membership = $members_model->get_membership( $user_id );
+        $user       = get_userdata( $user_id );
+        $tiers      = $tiers_model->get_all();
 
         // Get penalty history.
         global $wpdb;
@@ -347,6 +349,7 @@ class SWS_Admin {
             'annual_price'    => (float) ( $_POST['annual_price'] ?? 0 ),
             'sort_order'      => (int) ( $_POST['sort_order'] ?? 0 ),
             'is_active'       => isset( $_POST['is_active'] ) ? 1 : 0,
+            'wc_product_id'   => (int) ( $_POST['wc_product_id'] ?? 0 ),
         );
 
         if ( $tier_id ) {

@@ -56,10 +56,12 @@ class SWS_Database {
             annual_price decimal(10,2) NOT NULL DEFAULT 0.00,
             sort_order int(11) NOT NULL DEFAULT 0,
             is_active tinyint(1) NOT NULL DEFAULT 1,
+            wc_product_id bigint(20) unsigned DEFAULT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
-            UNIQUE KEY slug (slug)
+            UNIQUE KEY slug (slug),
+            KEY wc_product_id (wc_product_id)
         ) {$charset_collate};";
     }
 

@@ -64,7 +64,7 @@ class SWS_Members {
     public function get_or_create_calendar_token( $user_id ) {
         global $wpdb;
 
-        $member = $this->get_by_user_id( $user_id );
+        $member = $this->ensure_record( $user_id );
         if ( ! $member ) {
             return false;
         }
@@ -470,66 +470,80 @@ class SWS_Members {
     }
 
     /**
-     * Sync all members' Stripe subscription statuses.
+     * Ensure a lightweight member record exists for a user.
+     *
+     * Membership status and tier are owned by WooCommerce; this local row only
+     * holds plugin-specific data (penalty strikes, waitlist-only restriction,
+     * calendar token). Created on demand the first time a member books or visits.
+     *
+     * @param int $user_id WordPress user ID.
+     * @return object|null The member record.
      */
-    public function sync_all_stripe_subscriptions() {
+    public function ensure_record( $user_id ) {
+        $record = $this->get_by_user_id( $user_id );
+        if ( $record ) {
+            return $record;
+        }
+
         global $wpdb;
+        $wpdb->insert( $this->table, array(
+            'user_id'               => (int) $user_id,
+            'membership_tier_id'    => 0,
+            'membership_status'     => 'active',
+            'billing_cycle'         => 'monthly',
+            'membership_start_date' => current_time( 'Y-m-d' ),
+            'penalty_strikes'       => 0,
+        ) );
 
-        $members = $wpdb->get_results(
-            "SELECT * FROM {$this->table}
-             WHERE stripe_subscription_id IS NOT NULL
-             AND stripe_subscription_id != ''
-             AND membership_status IN ('active', 'lapsed')"
-        );
-
-        if ( empty( $members ) ) {
-            return;
-        }
-
-        $stripe_secret = get_option( 'sws_stripe_secret_key', '' );
-        if ( empty( $stripe_secret ) ) {
-            return;
-        }
-
-        foreach ( $members as $member ) {
-            $this->sync_single_stripe_subscription( $member, $stripe_secret );
-        }
+        return $this->get_by_user_id( $user_id );
     }
 
     /**
-     * Sync a single member's Stripe subscription.
+     * Resolve a member's effective membership: active status + tier from
+     * WooCommerce, restriction + strikes from the local record.
      *
-     * @param object $member     Member record.
-     * @param string $secret_key Stripe secret key.
+     * Falls back to the local record's own status/tier if WooCommerce
+     * Subscriptions is not available (e.g. local dev without WC).
+     *
+     * @param int $user_id WordPress user ID.
+     * @return object {
+     *     user_id, is_active, restricted, can_book, tier (object|null),
+     *     tier_id, tier_name, tier_slug, events_included, strikes
+     * }
      */
-    private function sync_single_stripe_subscription( $member, $secret_key ) {
-        $response = wp_remote_get( 'https://api.stripe.com/v1/subscriptions/' . $member->stripe_subscription_id, array(
-            'headers' => array(
-                'Authorization' => 'Bearer ' . $secret_key,
-            ),
-            'timeout' => 15,
-        ) );
+    public function get_membership( $user_id ) {
+        $record     = $this->ensure_record( $user_id );
+        $restricted = $record && $record->membership_status === 'waitlist_only';
+        $strikes    = $record ? (int) $record->penalty_strikes : 0;
 
-        if ( is_wp_error( $response ) ) {
-            return;
+        if ( SWS_Woo::is_available() ) {
+            $is_active = SWS_Woo::is_active_member( $user_id );
+            $tier      = SWS_Woo::get_member_tier( $user_id );
+
+            // Cache the resolved tier on the local record so tier-based reports work.
+            if ( $tier && $record && (int) $record->membership_tier_id !== (int) $tier->id ) {
+                $this->update( $user_id, array( 'membership_tier_id' => (int) $tier->id ) );
+            }
+        } else {
+            // Legacy fallback: trust the local record (pre-WooCommerce behaviour).
+            $is_active = $record && in_array( $record->membership_status, array( 'active', 'waitlist_only' ), true );
+            $tier      = ( $record && $record->membership_tier_id ) ? ( new SWS_Tiers() )->get( $record->membership_tier_id ) : null;
         }
 
-        $body = json_decode( wp_remote_retrieve_body( $response ), true );
+        $events_included = $tier ? (bool) $tier->events_included : false;
 
-        if ( empty( $body ) || isset( $body['error'] ) ) {
-            return;
-        }
-
-        $stripe_status = $body['status'] ?? '';
-        $active_statuses = array( 'active', 'trialing' );
-
-        if ( in_array( $stripe_status, $active_statuses, true ) && $member->membership_status !== 'active' ) {
-            $this->update( $member->user_id, array( 'membership_status' => 'active' ) );
-        } elseif ( ! in_array( $stripe_status, $active_statuses, true ) && $member->membership_status === 'active' ) {
-            $this->update( $member->user_id, array( 'membership_status' => 'lapsed' ) );
-
-            do_action( 'sws_member_lapsed', $member->user_id, $stripe_status );
-        }
+        return (object) array(
+            'user_id'         => (int) $user_id,
+            'is_active'       => (bool) $is_active,
+            'restricted'      => (bool) $restricted,
+            'can_book'        => ( $is_active && ! $restricted ),
+            'tier'            => $tier,
+            'tier_id'         => $tier ? (int) $tier->id : 0,
+            'tier_name'       => $tier ? $tier->name : '',
+            'tier_slug'       => $tier ? $tier->slug : '',
+            'events_included' => $events_included,
+            'strikes'         => $strikes,
+        );
     }
 
     /**
@@ -541,7 +555,7 @@ class SWS_Members {
     public function add_strike( $user_id ) {
         global $wpdb;
 
-        $member = $this->get_by_user_id( $user_id );
+        $member = $this->ensure_record( $user_id );
         if ( ! $member ) {
             return 0;
         }

@@ -114,9 +114,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <th><?php esc_html_e( 'Name', 'sws-members-club' ); ?></th>
                     <th><?php esc_html_e( 'Slug', 'sws-members-club' ); ?></th>
                     <th><?php esc_html_e( 'Events Included', 'sws-members-club' ); ?></th>
-                    <th><?php esc_html_e( 'Monthly', 'sws-members-club' ); ?></th>
-                    <th><?php esc_html_e( 'Quarterly', 'sws-members-club' ); ?></th>
-                    <th><?php esc_html_e( 'Annual', 'sws-members-club' ); ?></th>
+                    <th><?php esc_html_e( 'WooCommerce Product', 'sws-members-club' ); ?></th>
                     <th><?php esc_html_e( 'Order', 'sws-members-club' ); ?></th>
                     <th><?php esc_html_e( 'Active', 'sws-members-club' ); ?></th>
                 </tr>
@@ -127,9 +125,16 @@ if ( ! defined( 'ABSPATH' ) ) {
                         <td><strong><?php echo esc_html( $tier->name ); ?></strong></td>
                         <td><code><?php echo esc_html( $tier->slug ); ?></code></td>
                         <td><?php echo $tier->events_included ? esc_html__( 'Yes', 'sws-members-club' ) : esc_html__( 'No', 'sws-members-club' ); ?></td>
-                        <td>&pound;<?php echo esc_html( number_format( (float) $tier->monthly_price, 2 ) ); ?></td>
-                        <td>&pound;<?php echo esc_html( number_format( (float) $tier->quarterly_price, 2 ) ); ?></td>
-                        <td>&pound;<?php echo esc_html( number_format( (float) $tier->annual_price, 2 ) ); ?></td>
+                        <td>
+                            <?php
+                            if ( ! empty( $tier->wc_product_id ) ) {
+                                $wc_name = function_exists( 'wc_get_product' ) ? wc_get_product( $tier->wc_product_id ) : null;
+                                echo esc_html( $wc_name ? $wc_name->get_name() . ' (#' . $tier->wc_product_id . ')' : '#' . $tier->wc_product_id );
+                            } else {
+                                echo '<em>' . esc_html__( 'Not linked', 'sws-members-club' ) . '</em>';
+                            }
+                            ?>
+                        </td>
                         <td><?php echo esc_html( $tier->sort_order ); ?></td>
                         <td><?php echo $tier->is_active ? esc_html__( 'Yes', 'sws-members-club' ) : esc_html__( 'No', 'sws-members-club' ); ?></td>
                     </tr>
@@ -157,6 +162,13 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <tr>
                     <th><?php esc_html_e( 'Events Included', 'sws-members-club' ); ?></th>
                     <td><label><input type="checkbox" name="events_included" value="1"> <?php esc_html_e( 'Members on this tier attend all events free of charge', 'sws-members-club' ); ?></label></td>
+                </tr>
+                <tr>
+                    <th><label for="tier_wc_product"><?php esc_html_e( 'WooCommerce Product ID', 'sws-members-club' ); ?></label></th>
+                    <td>
+                        <input type="number" name="wc_product_id" id="tier_wc_product" min="0" value="" class="small-text">
+                        <p class="description"><?php esc_html_e( 'The WooCommerce subscription product ID that grants this tier. Members holding an active subscription to this product are mapped to this tier.', 'sws-members-club' ); ?></p>
+                    </td>
                 </tr>
                 <tr>
                     <th><label for="tier_monthly"><?php esc_html_e( 'Monthly Price', 'sws-members-club' ); ?></label></th>

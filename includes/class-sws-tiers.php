@@ -88,6 +88,23 @@ class SWS_Tiers {
     }
 
     /**
+     * Get the tier mapped to a given WooCommerce product ID.
+     *
+     * @param int $product_id WooCommerce product ID.
+     * @return object|null
+     */
+    public function get_by_wc_product( $product_id ) {
+        global $wpdb;
+        if ( ! $product_id ) {
+            return null;
+        }
+        return $wpdb->get_row( $wpdb->prepare(
+            "SELECT * FROM {$this->table} WHERE wc_product_id = %d",
+            (int) $product_id
+        ) );
+    }
+
+    /**
      * Create a new tier.
      *
      * @param array $data Tier data.
@@ -124,6 +141,7 @@ class SWS_Tiers {
             'annual_price'    => (float) $data['annual_price'],
             'sort_order'      => (int) $data['sort_order'],
             'is_active'       => (int) $data['is_active'],
+            'wc_product_id'   => ! empty( $data['wc_product_id'] ) ? (int) $data['wc_product_id'] : null,
         ) );
 
         return $result ? $wpdb->insert_id : false;
@@ -142,7 +160,7 @@ class SWS_Tiers {
         $allowed = array(
             'name', 'slug', 'events_included',
             'monthly_price', 'quarterly_price', 'annual_price',
-            'sort_order', 'is_active',
+            'sort_order', 'is_active', 'wc_product_id',
         );
 
         $update = array();
@@ -162,6 +180,9 @@ class SWS_Tiers {
                 case 'sort_order':
                 case 'is_active':
                     $update[ $field ] = (int) $data[ $field ];
+                    break;
+                case 'wc_product_id':
+                    $update['wc_product_id'] = ! empty( $data['wc_product_id'] ) ? (int) $data['wc_product_id'] : null;
                     break;
                 case 'monthly_price':
                 case 'quarterly_price':

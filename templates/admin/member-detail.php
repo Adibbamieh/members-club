@@ -2,7 +2,7 @@
 /**
  * Admin template: Member detail/edit.
  *
- * Variables available: $member, $user, $tiers, $penalties
+ * Variables available: $member, $membership, $user, $tiers, $penalties
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -28,70 +28,53 @@ if ( ! defined( 'ABSPATH' ) ) {
             <!-- Main content -->
             <div id="post-body-content">
                 <div class="postbox">
-                    <h2 class="hndle"><?php esc_html_e( 'Member Details', 'sws-members-club' ); ?></h2>
+                    <h2 class="hndle"><?php esc_html_e( 'Membership', 'sws-members-club' ); ?></h2>
                     <div class="inside">
-                        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-                            <input type="hidden" name="action" value="sws_save_member">
-                            <input type="hidden" name="user_id" value="<?php echo esc_attr( $member->user_id ); ?>">
-                            <?php wp_nonce_field( 'sws_save_member', 'sws_nonce' ); ?>
-
-                            <table class="form-table">
-                                <tr>
-                                    <th scope="row"><?php esc_html_e( 'Email', 'sws-members-club' ); ?></th>
-                                    <td><?php echo esc_html( $user->user_email ); ?></td>
-                                </tr>
-                                <tr>
-                                    <th scope="row"><label for="membership_tier_id"><?php esc_html_e( 'Membership Tier', 'sws-members-club' ); ?></label></th>
-                                    <td>
-                                        <select name="membership_tier_id" id="membership_tier_id">
-                                            <?php foreach ( $tiers as $tier ) : ?>
-                                                <option value="<?php echo esc_attr( $tier->id ); ?>" <?php selected( $member->membership_tier_id, $tier->id ); ?>>
-                                                    <?php echo esc_html( $tier->name ); ?>
-                                                    <?php if ( ! $tier->is_active ) echo ' (' . esc_html__( 'inactive', 'sws-members-club' ) . ')'; ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row"><label for="membership_status"><?php esc_html_e( 'Status', 'sws-members-club' ); ?></label></th>
-                                    <td>
-                                        <select name="membership_status" id="membership_status">
-                                            <option value="active" <?php selected( $member->membership_status, 'active' ); ?>><?php esc_html_e( 'Active', 'sws-members-club' ); ?></option>
-                                            <option value="lapsed" <?php selected( $member->membership_status, 'lapsed' ); ?>><?php esc_html_e( 'Lapsed', 'sws-members-club' ); ?></option>
-                                            <option value="suspended" <?php selected( $member->membership_status, 'suspended' ); ?>><?php esc_html_e( 'Suspended', 'sws-members-club' ); ?></option>
-                                            <option value="waitlist_only" <?php selected( $member->membership_status, 'waitlist_only' ); ?>><?php esc_html_e( 'Waitlist Only', 'sws-members-club' ); ?></option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row"><label for="billing_cycle"><?php esc_html_e( 'Billing Cycle', 'sws-members-club' ); ?></label></th>
-                                    <td>
-                                        <select name="billing_cycle" id="billing_cycle">
-                                            <option value="monthly" <?php selected( $member->billing_cycle, 'monthly' ); ?>><?php esc_html_e( 'Monthly', 'sws-members-club' ); ?></option>
-                                            <option value="quarterly" <?php selected( $member->billing_cycle, 'quarterly' ); ?>><?php esc_html_e( 'Quarterly', 'sws-members-club' ); ?></option>
-                                            <option value="annual" <?php selected( $member->billing_cycle, 'annual' ); ?>><?php esc_html_e( 'Annual', 'sws-members-club' ); ?></option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row"><?php esc_html_e( 'Stripe Customer', 'sws-members-club' ); ?></th>
-                                    <td>
-                                        <?php if ( $member->stripe_customer_id ) : ?>
-                                            <code><?php echo esc_html( $member->stripe_customer_id ); ?></code>
-                                        <?php else : ?>
-                                            <em><?php esc_html_e( 'Not linked', 'sws-members-club' ); ?></em>
+                        <p class="description" style="margin: 8px 0 12px;">
+                            <?php esc_html_e( 'Membership status, tier and billing are managed in WooCommerce Subscriptions. This page is read-only for those fields.', 'sws-members-club' ); ?>
+                        </p>
+                        <table class="form-table">
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Email', 'sws-members-club' ); ?></th>
+                                <td><?php echo esc_html( $user->user_email ); ?></td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Membership Status', 'sws-members-club' ); ?></th>
+                                <td>
+                                    <?php if ( $membership->is_active ) : ?>
+                                        <span class="sws-status sws-status--active"><?php esc_html_e( 'Active', 'sws-members-club' ); ?></span>
+                                    <?php else : ?>
+                                        <span class="sws-status sws-status--lapsed"><?php esc_html_e( 'No active subscription', 'sws-members-club' ); ?></span>
+                                    <?php endif; ?>
+                                    <?php if ( $membership->restricted ) : ?>
+                                        <span class="sws-status sws-status--waitlist_only"><?php esc_html_e( 'Waitlist-only (penalty)', 'sws-members-club' ); ?></span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'Membership Tier', 'sws-members-club' ); ?></th>
+                                <td>
+                                    <?php if ( $membership->tier_name ) : ?>
+                                        <?php echo esc_html( $membership->tier_name ); ?>
+                                        <?php if ( $membership->events_included ) : ?>
+                                            <em>(<?php esc_html_e( 'events included', 'sws-members-club' ); ?>)</em>
                                         <?php endif; ?>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row"><?php esc_html_e( 'Member Since', 'sws-members-club' ); ?></th>
-                                    <td><?php echo esc_html( $member->membership_start_date ? date_i18n( get_option( 'date_format' ), strtotime( $member->membership_start_date ) ) : '—' ); ?></td>
-                                </tr>
-                            </table>
-
-                            <?php submit_button( __( 'Save Changes', 'sws-members-club' ) ); ?>
-                        </form>
+                                    <?php else : ?>
+                                        <em><?php esc_html_e( 'Not resolved from WooCommerce', 'sws-members-club' ); ?></em>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php esc_html_e( 'WooCommerce', 'sws-members-club' ); ?></th>
+                                <td>
+                                    <?php if ( class_exists( 'SWS_Woo' ) && SWS_Woo::is_available() ) : ?>
+                                        <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=shop_subscription' ) ); ?>"><?php esc_html_e( 'View subscriptions', 'sws-members-club' ); ?></a>
+                                    <?php else : ?>
+                                        <em><?php esc_html_e( 'WooCommerce Subscriptions not detected (using legacy local status).', 'sws-members-club' ); ?></em>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        </table>
                     </div>
                 </div>
             </div>
