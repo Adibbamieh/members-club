@@ -170,9 +170,11 @@
         var eventTitle = btn.dataset.eventTitle;
         var eventDate  = btn.dataset.eventDate;
         var amount     = parseFloat(btn.dataset.amount);
+        var hasGuest   = btn.dataset.hasGuest === '1';
 
-        var message = swsData.i18n.confirmCancel.replace('[Event Name]', eventTitle);
-        var refundNote = amount > 0 ? ' ' + swsData.i18n.cancelRefund : '';
+        var guestNote = hasGuest
+            ? ' This will also cancel your guest’s ticket for this event.'
+            : '';
 
         // Create modal.
         var overlay = document.createElement('div');
@@ -184,6 +186,7 @@
                     'Are you sure you want to cancel your ticket for <strong>' +
                     escHtml(eventTitle) + '</strong> on ' + escHtml(eventDate) + '?' +
                     (amount > 0 ? ' You will receive a full refund.' : '') +
+                    escHtml(guestNote) +
                 '</p>' +
                 '<div class="sws-modal__actions">' +
                     '<button class="sws-modal__cancel" type="button">Keep Ticket</button>' +
@@ -203,6 +206,13 @@
             confirmBtn.textContent = swsData.i18n.cancelling;
 
             apiDelete('bookings/' + bookingId).then(function () {
+                // Cancelling a main ticket also cancels its guest ticket — reload
+                // so both cards and the count update correctly.
+                if (hasGuest) {
+                    window.location.reload();
+                    return;
+                }
+
                 // Remove the ticket card from DOM.
                 var card = document.querySelector('[data-booking-id="' + bookingId + '"]');
                 if (card) card.remove();

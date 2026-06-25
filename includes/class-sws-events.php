@@ -362,34 +362,13 @@ class SWS_Events {
     /**
      * Refund a booking payment via Stripe.
      *
+     * Refunds only this ticket's own amount so that, when a member + guest share
+     * one PaymentIntent, each ticket's portion is refunded exactly once.
+     *
      * @param object $booking Booking record.
      * @return bool
      */
     private function refund_booking_payment( $booking ) {
-        $test_mode  = get_option( 'sws_stripe_test_mode', 1 );
-        $secret_key = $test_mode
-            ? get_option( 'sws_stripe_test_secret_key', '' )
-            : get_option( 'sws_stripe_secret_key', '' );
-
-        if ( empty( $secret_key ) ) {
-            return false;
-        }
-
-        $response = wp_remote_post( 'https://api.stripe.com/v1/refunds', array(
-            'headers' => array(
-                'Authorization' => 'Bearer ' . $secret_key,
-            ),
-            'body'    => array(
-                'payment_intent' => $booking->stripe_payment_intent_id,
-            ),
-            'timeout' => 15,
-        ) );
-
-        if ( is_wp_error( $response ) ) {
-            return false;
-        }
-
-        $body = json_decode( wp_remote_retrieve_body( $response ), true );
-        return isset( $body['id'] ) && ! isset( $body['error'] );
+        return SWS_Stripe::refund( $booking->stripe_payment_intent_id, (float) $booking->amount_paid );
     }
 }

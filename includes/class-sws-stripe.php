@@ -133,24 +133,36 @@ class SWS_Stripe {
     }
 
     /**
-     * Refund a PaymentIntent (full refund).
+     * Refund a PaymentIntent — full, or a partial amount.
      *
-     * @param string $payment_intent_id Stripe PaymentIntent ID.
+     * When two tickets (member + guest) share one PaymentIntent, pass the single
+     * ticket's amount so only that ticket's portion is refunded. Omit $amount to
+     * refund the whole PaymentIntent.
+     *
+     * @param string     $payment_intent_id Stripe PaymentIntent ID.
+     * @param float|null $amount            Amount to refund in major units (e.g. 45.00). Null = full.
      * @return bool True on success.
      */
-    public static function refund( $payment_intent_id ) {
+    public static function refund( $payment_intent_id, $amount = null ) {
         $secret = self::get_secret_key();
         if ( empty( $secret ) ) {
             return false;
+        }
+
+        $body = array(
+            'payment_intent' => $payment_intent_id,
+        );
+
+        if ( $amount !== null ) {
+            // Stripe expects the smallest currency unit (pence for GBP).
+            $body['amount'] = (int) round( (float) $amount * 100 );
         }
 
         $response = wp_remote_post( 'https://api.stripe.com/v1/refunds', array(
             'headers' => array(
                 'Authorization' => 'Bearer ' . $secret,
             ),
-            'body'    => array(
-                'payment_intent' => $payment_intent_id,
-            ),
+            'body'    => $body,
             'timeout' => 15,
         ) );
 

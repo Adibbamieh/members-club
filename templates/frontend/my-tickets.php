@@ -52,11 +52,22 @@ $calendar_webcal_url = $calendar_webcal_url ?? '';
         <?php if ( empty( $upcoming ) ) : ?>
             <p class="sws-my-tickets__empty"><?php esc_html_e( 'You have no upcoming event tickets.', 'sws-members-club' ); ?></p>
         <?php else : ?>
+            <?php
+            // Identify main tickets that have a linked guest ticket, so we can warn
+            // the member that cancelling their ticket also cancels the guest's.
+            $main_ids_with_guest = array();
+            foreach ( $upcoming as $b ) {
+                if ( (int) $b->is_guest_ticket === 1 && ! empty( $b->parent_booking_id ) ) {
+                    $main_ids_with_guest[ (int) $b->parent_booking_id ] = true;
+                }
+            }
+            ?>
             <div class="sws-my-tickets__list">
                 <?php foreach ( $upcoming as $booking ) :
                     $bookings_model = new SWS_Bookings();
                     $can_cancel     = $bookings_model->is_within_cancellation_window( $booking );
                     $gcal_url       = SWS_Calendar::google_calendar_url( $booking );
+                    $has_guest      = isset( $main_ids_with_guest[ (int) $booking->id ] );
                 ?>
                     <div class="sws-ticket-card" data-booking-id="<?php echo esc_attr( $booking->id ); ?>">
                         <div class="sws-ticket-card__header">
@@ -118,7 +129,8 @@ $calendar_webcal_url = $calendar_webcal_url ?? '';
                                         data-booking-id="<?php echo esc_attr( $booking->id ); ?>"
                                         data-event-title="<?php echo esc_attr( $booking->event_title ); ?>"
                                         data-event-date="<?php echo esc_attr( date_i18n( get_option( 'date_format' ), strtotime( $booking->event_date ) ) ); ?>"
-                                        data-amount="<?php echo esc_attr( $booking->amount_paid ); ?>">
+                                        data-amount="<?php echo esc_attr( $booking->amount_paid ); ?>"
+                                        data-has-guest="<?php echo $has_guest ? '1' : '0'; ?>">
                                     <?php esc_html_e( 'Cancel Ticket', 'sws-members-club' ); ?>
                                 </button>
                             <?php else : ?>

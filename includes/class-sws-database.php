@@ -142,6 +142,7 @@ class SWS_Database {
             guest_name varchar(255) DEFAULT NULL,
             guest_email varchar(255) DEFAULT NULL,
             is_guest_ticket tinyint(1) NOT NULL DEFAULT 0,
+            parent_booking_id bigint(20) unsigned DEFAULT NULL,
             stripe_payment_intent_id varchar(255) DEFAULT NULL,
             amount_paid decimal(10,2) NOT NULL DEFAULT 0.00,
             status varchar(20) NOT NULL DEFAULT 'confirmed',
@@ -156,7 +157,8 @@ class SWS_Database {
             KEY member_user_id (member_user_id),
             KEY status (status),
             KEY waitlist_claim_token (waitlist_claim_token),
-            KEY stripe_payment_intent_id (stripe_payment_intent_id)
+            KEY stripe_payment_intent_id (stripe_payment_intent_id),
+            KEY parent_booking_id (parent_booking_id)
         ) {$charset_collate};";
     }
 

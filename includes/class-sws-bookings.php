@@ -222,21 +222,25 @@ class SWS_Bookings {
 
         $booking_ids = array();
 
-        // Ticket 1: Member's own ticket.
+        // Ticket 1: Member's own ticket (the "main" ticket).
         $wpdb->insert( $this->table, array(
             'event_id'                => $event_id,
             'member_user_id'          => $user_id,
             'guest_name'              => null,
             'guest_email'             => null,
             'is_guest_ticket'         => 0,
+            'parent_booking_id'       => null,
             'stripe_payment_intent_id' => $payment_intent_id ?: null,
             'amount_paid'             => $amount_per_ticket,
             'status'                  => 'confirmed',
             'booked_at'               => current_time( 'mysql' ),
         ) );
-        $booking_ids[] = $wpdb->insert_id;
+        $main_booking_id = $wpdb->insert_id;
+        $booking_ids[]   = $main_booking_id;
 
-        // Ticket 2: Guest ticket (if applicable).
+        // Ticket 2: Guest ticket, linked to the main ticket as its parent so
+        // cancelling the main ticket cascades to the guest, while cancelling the
+        // guest leaves the main ticket intact.
         if ( $include_guest ) {
             $wpdb->insert( $this->table, array(
                 'event_id'                => $event_id,
@@ -244,6 +248,7 @@ class SWS_Bookings {
                 'guest_name'              => $guest_name,
                 'guest_email'             => $guest_email,
                 'is_guest_ticket'         => 1,
+                'parent_booking_id'       => $main_booking_id,
                 'stripe_payment_intent_id' => $payment_intent_id ?: null,
                 'amount_paid'             => $amount_per_ticket,
                 'status'                  => 'confirmed',
@@ -266,7 +271,11 @@ class SWS_Bookings {
     }
 
     /**
-     * Cancel a single booking (individual ticket).
+     * Cancel a booking (individual ticket).
+     *
+     * Cancelling a guest (+1) ticket cancels only that ticket. Cancelling the
+     * main ticket also cascades to its linked guest ticket — a guest cannot
+     * attend without the member who booked them.
      *
      * @param int  $booking_id Booking ID.
      * @param int  $user_id    WordPress user ID (for permission check).
@@ -299,31 +308,61 @@ class SWS_Bookings {
             }
         }
 
+        // Cancel the targeted ticket.
+        $this->cancel_single_ticket( $booking );
+
+        // If this is the main ticket, cascade to its linked guest ticket(s).
+        if ( (int) $booking->is_guest_ticket === 0 ) {
+            $children = $wpdb->get_results( $wpdb->prepare(
+                "SELECT id FROM {$this->table} WHERE parent_booking_id = %d AND status = 'confirmed'",
+                (int) $booking_id
+            ) );
+
+            foreach ( $children as $child ) {
+                $child_booking = $this->get( $child->id );
+                if ( $child_booking ) {
+                    $this->cancel_single_ticket( $child_booking );
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Cancel one ticket row: refund its own portion (partial refund of the
+     * shared PaymentIntent if a guest shared it), update status, fire the hook.
+     *
+     * @param object $booking Booking record (with event data joined).
+     */
+    private function cancel_single_ticket( $booking ) {
+        global $wpdb;
+
         $update_data = array(
             'status'       => 'cancelled',
             'cancelled_at' => current_time( 'mysql' ),
         );
 
-        // Automatic Stripe refund — hard requirement from spec.
+        // Automatic Stripe refund — refund only THIS ticket's amount so the
+        // sibling ticket's payment is never touched.
         if ( ! empty( $booking->stripe_payment_intent_id ) && $booking->amount_paid > 0 ) {
-            $refunded = SWS_Stripe::refund( $booking->stripe_payment_intent_id );
+            $refunded = SWS_Stripe::refund( $booking->stripe_payment_intent_id, (float) $booking->amount_paid );
             if ( $refunded ) {
                 $update_data['status']      = 'refunded';
                 $update_data['refunded_at'] = current_time( 'mysql' );
             }
         }
 
-        $wpdb->update( $this->table, $update_data, array( 'id' => (int) $booking_id ) );
+        $wpdb->update( $this->table, $update_data, array( 'id' => (int) $booking->id ) );
 
         /**
-         * Fires after a booking is cancelled.
+         * Fires after a ticket is cancelled (once per ticket, including each
+         * cascaded guest ticket — so emails and waitlist promotion run per seat).
          *
          * @param int    $booking_id Booking ID.
          * @param object $booking    Booking data (before update).
          */
-        do_action( 'sws_booking_cancelled', $booking_id, $booking );
-
-        return true;
+        do_action( 'sws_booking_cancelled', (int) $booking->id, $booking );
     }
 
     /**
